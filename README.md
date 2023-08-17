@@ -8,7 +8,7 @@ Pick a movie
 2. Install mysql
 3. Init the db
    - Update the file paths
-   - `mysql -uroot -t < init.sql`
+   - `mysql -uroot < init.sql`
 4. Query for movies
    - `mysql -uroot -t < query.sql`
 5. Hehe `;)`
