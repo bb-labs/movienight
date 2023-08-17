@@ -10,7 +10,6 @@ SELECT
 FROM
   titles
   INNER JOIN ratings ON titles.tconst = ratings.tconst
-  INNER JOIN info ON titles.tconst = info.tconst
 WHERE
   ratings.rating > 8
   -- AND ratings.rating < 8
