@@ -5,9 +5,10 @@ Pick a movie
 # Steps
 
 1. Download files https://datasets.imdbws.com/
-2. Init the db
+2. Install mysql
+3. Init the db
    i. Update the file paths
    ii. `mysql -uroot -t < init.sql`
-3. Query for movies
+4. Query for movies
    i. `mysql -uroot -t < query.sql`
-4. Hehe `;)`
+5. Hehe `;)`
