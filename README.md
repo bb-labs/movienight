@@ -6,7 +6,8 @@ Pick a movie
 
 1. Download files https://datasets.imdbws.com/
 2. Init the db
-   i. `mysql -uroot -t < init.sql`
+   i. Update the file paths
+   ii. `mysql -uroot -t < init.sql`
 3. Query for movies
    i. `mysql -uroot -t < query.sql`
-4. Hehe
+4. Hehe `;)`

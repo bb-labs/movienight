@@ -33,9 +33,9 @@ CREATE TABLE info (
   originalTitle INT
 );
 
-LOAD DATA LOCAL INFILE '/Users/trumanpurnell/Desktop/movies/title.basics.tsv' INTO TABLE titles;
+LOAD DATA LOCAL INFILE '/Users/trumanpurnell/Workspace/labs/movies/title.basics.tsv' INTO TABLE titles;
 
-LOAD DATA LOCAL INFILE '/Users/trumanpurnell/Desktop/movies/title.ratings.tsv' INTO TABLE ratings;
+LOAD DATA LOCAL INFILE '/Users/trumanpurnell/Workspace/labs/movies/title.ratings.tsv' INTO TABLE ratings;
 
 CREATE UNIQUE INDEX primary_titles ON titles (tconst);
 
