@@ -11,8 +11,7 @@ FROM
   titles
   INNER JOIN ratings ON titles.tconst = ratings.tconst
 WHERE
-  ratings.rating > 8
-  -- AND ratings.rating < 8
+  ratings.rating > 8 -- AND ratings.rating < 8
   AND ratings.votes > 100000
   AND titles.startYear > 2000
   AND titles.titleType = 'movie' -- AND (titles.genres LIKE '%thriller%' OR titles.genres LIKE '%mystery%')
