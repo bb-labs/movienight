@@ -206,6 +206,12 @@ movienight_lambda:
       - delete
     args:
       FunctionName: movienight_lambda
+  invoke:
+    client: lambda
+    workflow:
+      - run
+    args:
+      FunctionName: movienight_lambda
 
 # # -------------------------------------------------------------------
 # # docker
