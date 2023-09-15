@@ -7,6 +7,7 @@ on:
         description: "awyes workflow type"
         required: true
         type: choice
+        default: release
         options:
           - init
           - release
