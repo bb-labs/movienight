@@ -142,6 +142,8 @@ movienight_lambda:
       FunctionName: movienight_lambda
       Role: $(movienight_role.get_role.Role.Arn)
       PackageType: Image
+      EphemeralStorage:
+        Size: 10240
       ImageConfig:
         Command:
           - lambda.handler
