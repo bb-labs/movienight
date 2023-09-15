@@ -12,26 +12,12 @@ movienight_role:
     args:
       RoleName: movienight
   create_role:
+  delete_role:
     client: iam
     workflow:
-      - init
+      - delete
     args:
       RoleName: movienight
-      Description: Role for movienight
-      AssumeRolePolicyDocument: >
-        {
-          "Version": "2012-10-17",
-          "Statement": [{
-            "Effect": "Allow",
-            "Principal": { 
-              "Service": [
-                "lambda.amazonaws.com", 
-                "rds.amazonaws.com"
-              ] 
-            },
-            "Action": "sts:AssumeRole"
-          }]
-        }
 
 movienight_role_attach_rds:
   attach_role_policy:
@@ -71,6 +57,13 @@ movienight_rds:
       Engine: "MySQL"
       MasterUsername: "username"
       MasterUserPassword: "password"
+  delete_db_instance:
+    client: rds
+    workflow:
+      - delete
+    args:
+      DBInstanceIdentifier: "movienight"
+      DeleteAutomatedBackups: true
 
 # # -------------------------------------------------------------------
 # # repos
@@ -114,7 +107,13 @@ movienight_repo:
       - init
     args:
       repositoryName: movienight_repo
-
+  delete_repository:
+    client: ecr
+    workflow:
+      - delete
+    args:
+      repositoryName: movienight_repo
+      force: true
 # # -------------------------------------------------------------------
 # # lambdas
 # # -------------------------------------------------------------------
@@ -199,6 +198,12 @@ movienight_lambda:
       StatementId: $(movienight_lambda.describe_rule.Name)
       Action: lambda:InvokeFunction
       Principal: events.amazonaws.com
+  delete_function:
+    client: lambda
+    workflow:
+      - delete
+    args:
+      FunctionName: movienight_lambda
 
 # # -------------------------------------------------------------------
 # # docker
