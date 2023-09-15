@@ -12,6 +12,26 @@ movienight_role:
     args:
       RoleName: movienight
   create_role:
+    client: iam
+    workflow:
+      - init
+    args:
+      RoleName: movienight
+      Description: Role for movienight
+      AssumeRolePolicyDocument: >
+        {
+          "Version": "2012-10-17",
+          "Statement": [{
+            "Effect": "Allow",
+            "Principal": { 
+              "Service": [
+                "lambda.amazonaws.com", 
+                "rds.amazonaws.com"
+              ] 
+            },
+            "Action": "sts:AssumeRole"
+          }]
+        }
   delete_role:
     client: iam
     workflow:
