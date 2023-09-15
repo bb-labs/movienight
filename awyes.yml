@@ -1,0 +1,258 @@
+# # -------------------------------------------------------------------
+# # roles
+# # -------------------------------------------------------------------
+
+movienight_role:
+  get_role:
+    client: iam
+    depends_on:
+      - movienight_role.create_role
+    workflow:
+      - init
+    args:
+      RoleName: movienight
+  create_role:
+    client: iam
+    workflow:
+      - init
+    args:
+      RoleName: movienight
+      Description: Role for movienight
+      AssumeRolePolicyDocument: >
+        {
+          "Version": "2012-10-17",
+          "Statement": [{
+            "Effect": "Allow",
+            "Principal": { 
+              "Service": [
+                "lambda.amazonaws.com", 
+                "rds.amazonaws.com"
+              ] 
+            },
+            "Action": "sts:AssumeRole"
+          }]
+        }
+
+movienight_role_attach_rds:
+  attach_role_policy:
+    client: iam
+    workflow:
+      - init
+    depends_on:
+      - movienight_role.get_role
+    args:
+      RoleName: movienight
+      PolicyArn: arn:aws:iam::aws:policy/AmazonRDSFullAccess
+
+movienight_role_attach_cloudwatch:
+  attach_role_policy:
+    client: iam
+    workflow:
+      - init
+    depends_on:
+      - movienight_role.get_role
+    args:
+      RoleName: movienight
+      PolicyArn: arn:aws:iam::aws:policy/CloudWatchFullAccess
+
+# # -------------------------------------------------------------------
+# # rds
+# # -------------------------------------------------------------------
+
+movienight_rds:
+  create_db_instance:
+    client: rds
+    workflow:
+      - init
+    args:
+      AllocatedStorage: 5
+      DBInstanceClass: "db.t2.micro"
+      DBInstanceIdentifier: "movienight"
+      Engine: "MySQL"
+      MasterUsername: "username"
+      MasterUserPassword: "password"
+
+# # -------------------------------------------------------------------
+# # repos
+# # -------------------------------------------------------------------
+
+movienight_repo:
+  list_images:
+    client: ecr
+    workflow:
+      - init
+      - release
+    depends_on:
+      - movienight_repo.create_repository
+    args:
+      repositoryName: movienight_repo
+  batch_delete_image:
+    client: ecr
+    depends_on:
+      - movienight_repo.list_images
+    workflow:
+      - init
+      - release
+    args:
+      repositoryName: movienight_repo
+      imageIds: $(movienight_repo.list_images.imageIds)
+  describe_images:
+    client: ecr
+    depends_on:
+      - movienight_repo.batch_delete_image
+      - movienight_image.push
+    workflow:
+      - init
+      - release
+    args:
+      repositoryName: movienight_repo
+      filter:
+        tagStatus: TAGGED
+  create_repository:
+    client: ecr
+    workflow:
+      - init
+    args:
+      repositoryName: movienight_repo
+
+# # -------------------------------------------------------------------
+# # lambdas
+# # -------------------------------------------------------------------
+
+movienight_lambda:
+  get_function:
+    client: lambda
+    depends_on:
+      - movienight_lambda.create_function
+    workflow:
+      - release
+      - run
+      - init
+    args:
+      FunctionName: movienight_lambda
+  create_function:
+    client: lambda
+    depends_on:
+      - movienight_role.get_role
+      - movienight_repo.describe_images
+    workflow:
+      - init
+    args:
+      Timeout: 900
+      MemorySize: 10240
+      FunctionName: movienight_lambda
+      Role: $(movienight_role.get_role.Role.Arn)
+      PackageType: Image
+      ImageConfig:
+        Command:
+          - lambda.handler
+      Code:
+        ImageUri: >-
+          718734850255.dkr.ecr.us-west-2.amazonaws.com/movienight_repo@$(movienight_repo.describe_images.imageDetails.0.imageDigest)
+  update_function_code:
+    client: lambda
+    depends_on:
+      - movienight_lambda.get_function
+      - movienight_repo.describe_images
+    workflow:
+      - release
+    args:
+      FunctionName: movienight_lambda
+      ImageUri: >-
+        718734850255.dkr.ecr.us-west-2.amazonaws.com/movienight_repo@$(movienight_repo.describe_images.imageDetails.0.imageDigest)
+  describe_rule:
+    client: events
+    depends_on:
+      - movienight_lambda.put_rule
+    workflow:
+      - init
+    args:
+      Name: movienight_lambda_event
+  put_rule:
+    client: events
+    workflow:
+      - init
+    args:
+      Name: movienight_lambda_event
+      ScheduleExpression: rate(1 day)
+      Description: Cron to trigger db refresh
+  put_targets:
+    client: events
+    workflow:
+      - init
+    depends_on:
+      - movienight_lambda.get_function
+    args:
+      Rule: movienight_lambda_event
+      Targets:
+        - Id: movienight_lambda
+          Arn: $(movienight_lambda.get_function.Configuration.FunctionArn)
+  add_permission:
+    client: lambda
+    workflow:
+      - init
+    depends_on:
+      - movienight_lambda.describe_rule
+    args:
+      FunctionName: movienight_lambda
+      SourceArn: $(movienight_lambda.describe_rule.Arn)
+      StatementId: $(movienight_lambda.describe_rule.Name)
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+
+# # -------------------------------------------------------------------
+# # docker
+# # -------------------------------------------------------------------
+
+movienight_docker_credentials:
+  sub:
+    client: re
+    depends_on:
+      - movienight_docker_credentials.b64decode
+    workflow:
+      - init
+      - release
+    args:
+      pattern: "AWS:"
+      repl: ""
+      string: $(movienight_docker_credentials.b64decode)
+  b64decode:
+    client: base64
+    depends_on:
+      - movienight_docker_credentials.get_authorization_token
+    workflow:
+      - init
+      - release
+    args:
+      s: $(movienight_docker_credentials.get_authorization_token.authorizationData.0.authorizationToken)
+  get_authorization_token:
+    client: ecr
+    workflow:
+      - init
+      - release
+
+movienight_image:
+  build:
+    client: docker.images
+    workflow:
+      - init
+      - release
+    args:
+      tag: 718734850255.dkr.ecr.us-west-2.amazonaws.com/movienight_repo
+      path: .
+      dockerfile: Dockerfile
+  push:
+    client: docker.images
+    depends_on:
+      - movienight_docker_credentials.sub
+      - movienight_image.build
+      - movienight_repo.batch_delete_image
+    workflow:
+      - init
+      - release
+    args:
+      repository: 718734850255.dkr.ecr.us-west-2.amazonaws.com/movienight_repo
+      tag: latest
+      auth_config:
+        username: AWS
+        password: $(movienight_docker_credentials.sub)

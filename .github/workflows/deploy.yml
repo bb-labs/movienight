@@ -1,0 +1,26 @@
+name: Deploy AWS resources
+
+on:
+  workflow_dispatch:
+    inputs:
+      workflow:
+        description: "awyes workflow type"
+        required: true
+        type: choice
+        options:
+          - init
+          - release
+          - run
+
+jobs:
+  deploy:
+    name: Deploy AWS resources
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Run awyes action
+        uses: bb-labs/awyes@main
+        with:
+          workflow: ${{ inputs.workflow }}

@@ -37,6 +37,10 @@ LOAD DATA LOCAL INFILE '/Users/trumanpurnell/Workspace/labs/movies/title.basics.
 
 LOAD DATA LOCAL INFILE '/Users/trumanpurnell/Workspace/labs/movies/title.ratings.tsv' INTO TABLE ratings;
 
+LOAD DATA LOCAL INFILE '/Users/trumanpurnell/Workspace/labs/movies/title.akas.tsv' INTO TABLE info;
+
 CREATE UNIQUE INDEX primary_titles ON titles (tconst);
 
 CREATE UNIQUE INDEX primary_ratings ON ratings (tconst);
+
+CREATE UNIQUE INDEX primary_info ON info (tconst);

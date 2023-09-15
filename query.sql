@@ -11,10 +11,12 @@ FROM
   titles
   INNER JOIN ratings ON titles.tconst = ratings.tconst
 WHERE
-  ratings.rating > 8 -- AND ratings.rating < 8
-  AND ratings.votes > 100000
-  AND titles.startYear > 2000
-  AND titles.titleType = 'movie' -- AND (titles.genres LIKE '%thriller%' OR titles.genres LIKE '%mystery%')
+  ratings.rating > 7 -- AND ratings.rating < 8
+  AND ratings.votes > 10000
+  AND titles.startYear >= 2020
+  AND titles.titleType = 'movie'
+  -- AND titles.genres LIKE '%Comedy%'
+  -- AND titles.genres LIKE '%Romance%'
 ORDER BY
-  ratings.rating DESC,
-  ratings.votes ASC;
+  -- ratings.rating DESC;
+  ratings.votes DESC;
