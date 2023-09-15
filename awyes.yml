@@ -88,7 +88,6 @@ movienight_repo:
   list_images:
     client: ecr
     workflow:
-      - init
       - release
     depends_on:
       - movienight_repo.create_repository
@@ -99,7 +98,6 @@ movienight_repo:
     depends_on:
       - movienight_repo.list_images
     workflow:
-      - init
       - release
     args:
       repositoryName: movienight_repo
