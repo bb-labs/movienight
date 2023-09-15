@@ -197,6 +197,8 @@ movienight_lambda:
     client: events
     workflow:
       - delete
+    depends_on:
+      - movienight_lambda.remove_targets
     args:
       Name: movienight_lambda_event
       Force: true
@@ -211,6 +213,13 @@ movienight_lambda:
       Targets:
         - Id: movienight_lambda
           Arn: $(movienight_lambda.get_function.Configuration.FunctionArn)
+  remove_targets:
+    client: events
+    workflow:
+      - delete
+    args:
+      Rule: movienight_lambda_event
+      Force: true
   add_permission:
     client: lambda
     workflow:
