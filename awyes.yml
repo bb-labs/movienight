@@ -219,6 +219,8 @@ movienight_lambda:
       - delete
     args:
       Rule: movienight_lambda_event
+      Ids:
+        - movienight_lambda
       Force: true
   add_permission:
     client: lambda
