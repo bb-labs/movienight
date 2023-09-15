@@ -139,7 +139,6 @@ movienight_lambda:
       - movienight_lambda.create_function
     workflow:
       - release
-      - run
       - init
     args:
       FunctionName: movienight_lambda
