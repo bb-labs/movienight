@@ -164,6 +164,15 @@ movienight_lambda:
       Code:
         ImageUri: >-
           718734850255.dkr.ecr.us-west-2.amazonaws.com/movienight_repo@$(movienight_repo.describe_images.imageDetails.0.imageDigest)
+  put_function_concurrency:
+    client: lambda
+    depends_on:
+      - movienight_lambda.get_function
+    workflow:
+      - init
+    args:
+      FunctionName: movienight_lambda
+      ReservedConcurrentExecutions: 1
   update_function_code:
     client: lambda
     depends_on:
