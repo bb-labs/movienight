@@ -3,6 +3,7 @@ import gzip
 import shutil
 import pathlib
 import requests
+import subprocess
 import pymysql.cursors
 
 from tqdm import tqdm
@@ -32,6 +33,8 @@ def download_and_unzip(remote_url, local_file_name):
 
 
 def handler(event, context):
+    subprocess.call(["ls", "-l"])
+
     download_and_unzip(
         remote_url='https://datasets.imdbws.com/title.basics.tsv.gz',
         local_file_name='/tmp/titles.tsv')
