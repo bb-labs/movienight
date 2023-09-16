@@ -67,7 +67,8 @@ movienight_rds:
     args:
       AllocatedStorage: 5
       DBInstanceClass: "db.t2.micro"
-      DBInstanceIdentifier: "movienight"
+      DBName: "movienight"
+      DBInstanceIdentifier: "movienight_rds"
       Engine: "MySQL"
       MasterUsername: "username"
       MasterUserPassword: "password"
@@ -76,7 +77,7 @@ movienight_rds:
     workflow:
       - delete
     args:
-      DBInstanceIdentifier: "movienight"
+      DBInstanceIdentifier: "movienight_rds"
       DeleteAutomatedBackups: true
       SkipFinalSnapshot: true
 

@@ -1,4 +1,4 @@
-DROP DATABASE movies;
+DROP DATABASE IF EXISTS movies;
 
 CREATE DATABASE movies;
 
@@ -22,25 +22,10 @@ CREATE TABLE ratings (
   votes INT
 );
 
-CREATE TABLE info (
-  tconst VARCHAR(255),
-  id INT,
-  title VARCHAR(255),
-  region VARCHAR(255),
-  language VARCHAR(255),
-  types VARCHAR(255),
-  attributes VARCHAR(255),
-  originalTitle INT
-);
+LOAD DATA LOCAL INFILE '/tmp/titles.tsv' INTO TABLE titles;
 
-LOAD DATA LOCAL INFILE '/Users/trumanpurnell/Workspace/labs/movies/title.basics.tsv' INTO TABLE titles;
-
-LOAD DATA LOCAL INFILE '/Users/trumanpurnell/Workspace/labs/movies/title.ratings.tsv' INTO TABLE ratings;
-
-LOAD DATA LOCAL INFILE '/Users/trumanpurnell/Workspace/labs/movies/title.akas.tsv' INTO TABLE info;
+LOAD DATA LOCAL INFILE '/tmp/ratings.tsv' INTO TABLE ratings;
 
 CREATE UNIQUE INDEX primary_titles ON titles (tconst);
 
 CREATE UNIQUE INDEX primary_ratings ON ratings (tconst);
-
-CREATE UNIQUE INDEX primary_info ON info (tconst);
