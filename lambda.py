@@ -34,10 +34,10 @@ def download_and_unzip(remote_url, local_file_name):
 def handler(event, context):
     download_and_unzip(
         remote_url='https://datasets.imdbws.com/title.basics.tsv.gz',
-        local_file_name='titles.tsv')
+        local_file_name='/tmp/titles.tsv')
     download_and_unzip(
         remote_url='https://datasets.imdbws.com/title.ratings.tsv.gz',
-        local_file_name='ratings.tsv')
+        local_file_name='/tmp/ratings.tsv')
 
     connection = pymysql.connect(
         host='movienight.c5e8mgqyznzj.us-west-2.rds.amazonaws.com',
