@@ -103,18 +103,6 @@ movienight_repo:
     args:
       repositoryName: movienight_repo
       imageIds: $(movienight_repo.list_images.imageIds)
-  describe_images:
-    client: ecr
-    depends_on:
-      - movienight_repo.batch_delete_image
-      - movienight_image.push
-    workflow:
-      - init
-      - release
-    args:
-      repositoryName: movienight_repo
-      filter:
-        tagStatus: TAGGED
   create_repository:
     client: ecr
     workflow:
@@ -133,27 +121,27 @@ movienight_repo:
 # # lambdas
 # # -------------------------------------------------------------------
 
-movienight_lambda:
+movienight_lambda_query:
   get_function:
     client: lambda
     depends_on:
-      - movienight_lambda.create_function
+      - movienight_lambda_query.create_function
     workflow:
       - release
       - init
     args:
-      FunctionName: movienight_lambda
+      FunctionName: movienight_lambda_query
   create_function:
     client: lambda
     depends_on:
       - movienight_role.get_role
-      - movienight_repo.describe_images
+      - movienight_image_query.push
     workflow:
       - init
     args:
       Timeout: 900
       MemorySize: 10240
-      FunctionName: movienight_lambda
+      FunctionName: movienight_lambda_query
       Role: $(movienight_role.get_role.Role.Arn)
       PackageType: Image
       EphemeralStorage:
@@ -163,41 +151,94 @@ movienight_lambda:
           - lambda.handler
       Code:
         ImageUri: >-
-          718734850255.dkr.ecr.us-west-2.amazonaws.com/movienight_repo@$(movienight_repo.describe_images.imageDetails.0.imageDigest)
-  put_function_concurrency:
+          718734850255.dkr.ecr.us-west-2.amazonaws.com/movienight_repo@$(movienight_image_query.push.-1.aux.Digest)
+  update_function_code:
     client: lambda
     depends_on:
-      - movienight_lambda.get_function
+      - movienight_lambda_query.get_function
+    workflow:
+      - release
+    args:
+      FunctionName: movienight_lambda_query
+      ImageUri: >-
+        718734850255.dkr.ecr.us-west-2.amazonaws.com/movienight_repo@$(movienight_image_query.push.-1.aux.Digest)
+  delete_function:
+    client: lambda
+    workflow:
+      - delete
+    args:
+      FunctionName: movienight_lambda_query
+  invoke:
+    client: lambda
+    workflow:
+      - run
+    args:
+      FunctionName: movienight_lambda_query
+
+movienight_lambda_init:
+  get_function:
+    client: lambda
+    depends_on:
+      - movienight_lambda_init.create_function
+    workflow:
+      - release
+      - init
+    args:
+      FunctionName: movienight_lambda_init
+  create_function:
+    client: lambda
+    depends_on:
+      - movienight_role.get_role
+      - movienight_image_init.push
     workflow:
       - init
     args:
-      FunctionName: movienight_lambda
+      Timeout: 900
+      MemorySize: 10240
+      FunctionName: movienight_lambda_init
+      Role: $(movienight_role.get_role.Role.Arn)
+      PackageType: Image
+      EphemeralStorage:
+        Size: 10240
+      ImageConfig:
+        Command:
+          - lambda.handler
+      Code:
+        ImageUri: >-
+          718734850255.dkr.ecr.us-west-2.amazonaws.com/movienight_repo@$(movienight_image_init.push.-1.aux.Digest)
+  put_function_concurrency:
+    client: lambda
+    depends_on:
+      - movienight_lambda_init.get_function
+    workflow:
+      - init
+    args:
+      FunctionName: movienight_lambda_init
       ReservedConcurrentExecutions: 1
   update_function_code:
     client: lambda
     depends_on:
-      - movienight_lambda.get_function
-      - movienight_repo.describe_images
+      - movienight_lambda_init.get_function
     workflow:
       - release
     args:
-      FunctionName: movienight_lambda
+      FunctionName: movienight_lambda_init
       ImageUri: >-
-        718734850255.dkr.ecr.us-west-2.amazonaws.com/movienight_repo@$(movienight_repo.describe_images.imageDetails.0.imageDigest)
+        718734850255.dkr.ecr.us-west-2.amazonaws.com/movienight_repo@$(movienight_image_init.push.-1.aux.Digest)
   describe_rule:
     client: events
     depends_on:
-      - movienight_lambda.put_rule
+      - movienight_lambda_init.put_rule
     workflow:
       - init
     args:
-      Name: movienight_lambda_event
+      Name: movienight_lambda_init_event
   put_rule:
     client: events
     workflow:
       - init
     args:
-      Name: movienight_lambda_event
+      Name: movienight_lambda_init_event
       ScheduleExpression: rate(1 day)
       Description: Cron to trigger db refresh
   delete_rule:
@@ -205,40 +246,40 @@ movienight_lambda:
     workflow:
       - delete
     depends_on:
-      - movienight_lambda.remove_targets
+      - movienight_lambda_init.remove_targets
     args:
-      Name: movienight_lambda_event
+      Name: movienight_lambda_init_event
       Force: true
   put_targets:
     client: events
     workflow:
       - init
     depends_on:
-      - movienight_lambda.get_function
+      - movienight_lambda_init.get_function
     args:
-      Rule: movienight_lambda_event
+      Rule: movienight_lambda_init_event
       Targets:
-        - Id: movienight_lambda
-          Arn: $(movienight_lambda.get_function.Configuration.FunctionArn)
+        - Id: movienight_lambda_init
+          Arn: $(movienight_lambda_init.get_function.Configuration.FunctionArn)
   remove_targets:
     client: events
     workflow:
       - delete
     args:
-      Rule: movienight_lambda_event
+      Rule: movienight_lambda_init_event
       Ids:
-        - movienight_lambda
+        - movienight_lambda_init
       Force: true
   add_permission:
     client: lambda
     workflow:
       - init
     depends_on:
-      - movienight_lambda.describe_rule
+      - movienight_lambda_init.describe_rule
     args:
-      FunctionName: movienight_lambda
-      SourceArn: $(movienight_lambda.describe_rule.Arn)
-      StatementId: $(movienight_lambda.describe_rule.Name)
+      FunctionName: movienight_lambda_init
+      SourceArn: $(movienight_lambda_init.describe_rule.Arn)
+      StatementId: $(movienight_lambda_init.describe_rule.Name)
       Action: lambda:InvokeFunction
       Principal: events.amazonaws.com
   delete_function:
@@ -246,13 +287,13 @@ movienight_lambda:
     workflow:
       - delete
     args:
-      FunctionName: movienight_lambda
+      FunctionName: movienight_lambda_init
   invoke:
     client: lambda
     workflow:
       - run
     args:
-      FunctionName: movienight_lambda
+      FunctionName: movienight_lambda_init
 
 # # -------------------------------------------------------------------
 # # docker
@@ -285,28 +326,58 @@ movienight_docker_credentials:
       - init
       - release
 
-movienight_image:
+movienight_image_init:
   build:
     client: docker.images
     workflow:
       - init
       - release
     args:
-      tag: 718734850255.dkr.ecr.us-west-2.amazonaws.com/movienight_repo
-      path: .
+      tag: 718734850255.dkr.ecr.us-west-2.amazonaws.com/movienight_repo:init
+      path: db
       dockerfile: Dockerfile
   push:
     client: docker.images
     depends_on:
       - movienight_docker_credentials.sub
-      - movienight_image.build
+      - movienight_image_init.build
       - movienight_repo.batch_delete_image
     workflow:
       - init
       - release
     args:
       repository: 718734850255.dkr.ecr.us-west-2.amazonaws.com/movienight_repo
-      tag: latest
+      tag: init
       auth_config:
         username: AWS
         password: $(movienight_docker_credentials.sub)
+      decode: true
+      stream: true
+
+movienight_image_query:
+  build:
+    client: docker.images
+    workflow:
+      - init
+      - release
+    args:
+      tag: 718734850255.dkr.ecr.us-west-2.amazonaws.com/movienight_repo:query
+      path: server
+      dockerfile: Dockerfile
+  push:
+    client: docker.images
+    depends_on:
+      - movienight_docker_credentials.sub
+      - movienight_image_query.build
+      - movienight_repo.batch_delete_image
+    workflow:
+      - init
+      - release
+    args:
+      repository: 718734850255.dkr.ecr.us-west-2.amazonaws.com/movienight_repo
+      tag: query
+      auth_config:
+        username: AWS
+        password: $(movienight_docker_credentials.sub)
+      decode: true
+      stream: true

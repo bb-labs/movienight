@@ -1,0 +1,45 @@
+SELECT DISTINCT
+  SUBSTRING_INDEX(SUBSTRING_INDEX(titles.titleType, ',', numbers.n), ',', -1)
+FROM
+  (SELECT 1 n UNION ALL SELECT 2
+   UNION ALL SELECT 3 UNION ALL SELECT 4) numbers INNER JOIN titles
+  ON CHAR_LENGTH(titles.titleType)
+     -CHAR_LENGTH(REPLACE(titles.titleType, ',', ''))>=numbers.n-1;
+     
+-- Title Types
+-- short                                                                       
+-- movie                                                                       
+-- tvShort                                                                     
+-- tvSeries                                                                    
+-- tvMiniSeries                                                                
+-- tvSpecial                                                                   
+
+
+-- Genres
+-- Short
+-- Documentary
+-- Animation
+-- Romance
+-- Comedy
+-- Sport
+-- News
+-- Drama
+-- Fantasy
+-- Horror
+-- Biography
+-- Music
+-- War
+-- Crime
+-- Western
+-- Family
+-- Adventure
+-- Action
+-- History
+-- Mystery
+-- Sci
+-- Musical
+-- Thriller
+-- Film
+-- Talk
+-- Game
+-- Reality

@@ -11,11 +11,10 @@ FROM
   titles
   INNER JOIN ratings ON titles.tconst = ratings.tconst
 WHERE
-  ratings.rating > 6
-  AND ratings.votes > 10000
-  AND titles.startYear >= 2020
+  ratings.rating > 7
+  AND ratings.votes > 100000
   AND titles.titleType = 'movie'
-  AND titles.genres LIKE '%Comedy%'
-  AND titles.genres LIKE '%Romance%'
+  AND titles.genres LIKE '%Western%'
+  -- AND titles.genres LIKE '%Crime%'
 ORDER BY
   ratings.votes DESC;
